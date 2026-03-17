@@ -16,7 +16,8 @@ export interface Room {
   game_status: GameStatus;
   current_round: number;
   round_settings: {
-    max_rounds: number;
+    mode: 'rounds' | 'score';
+    target: number;
   };
   current_prompt_id: string | null; // UUID, null when in lobby
 }

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase";
 import { submitVoteAction } from "@/src/app/actions/voting";
 import { Player } from "@/src/types/database";
+import { motion } from "framer-motion";
+import { GrossOutContainer } from "@/src/components/GrossOutContainer";
 
 // Fisher-Yates shuffle to randomize clues
 function shuffleArray<T>(array: T[]): T[] {
@@ -36,7 +38,6 @@ export default function VotingPage({ params }: { params: Promise<{ code: string 
     setPlayerId(localId);
 
     const loadVotingData = async () => {
-      // 1. Fetch all players and their clues
       const { data: playersData } = await supabase
         .from("players")
         .select("id, current_clue, assigned_sense, voted_for")
@@ -44,20 +45,17 @@ export default function VotingPage({ params }: { params: Promise<{ code: string 
 
       if (!playersData) return;
 
-      // Check if this player already voted (e.g., refreshed the page)
       const me = playersData.find(p => p.id === localId);
       if (me && me.voted_for) {
         setIsVoted(true);
       }
 
-      // 2. Filter out null clues (just in case), and shuffle them anonymously
       const validClues = playersData.filter(p => p.current_clue) as Player[];
       setClues(shuffleArray(validClues));
     };
 
     loadVotingData();
 
-    // 3. Listen for the global phase change to "resolution"
     const channel = supabase
       .channel(`voting_${code}`)
       .on(
@@ -92,77 +90,117 @@ export default function VotingPage({ params }: { params: Promise<{ code: string 
   };
 
   if (clues.length === 0) {
-    return <div className="flex items-center justify-center h-full font-display text-4xl text-toxic-green animate-pulse">GATHERING CLUES...</div>;
-  }
-
-  if (isVoted) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8">
-        <h1 className="font-display text-6xl text-warning-yellow drop-shadow-chunky">VOTE CAST</h1>
-        <p className="font-sans text-xl font-bold">Awaiting the verdict...</p>
-        <div className="w-16 h-16 border-8 border-warning-yellow border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center h-full font-display text-4xl text-toxic-green animate-pulse">
+        GATHERING CLUES...
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col h-full p-6">
-      {errorMsg && (
-        <div className="bg-warning-yellow text-bruise-purple font-bold p-3 rounded-xl text-center mb-4 border-4 border-bruise-purple">
-          {errorMsg}
+  if (isVoted) {
+    return (
+      <GrossOutContainer>
+        <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8">
+          <motion.h1 
+            initial={{ rotate: -10, scale: 0.5 }}
+            animate={{ rotate: 0, scale: 1 }}
+            className="font-display text-6xl text-warning-yellow drop-shadow-chunky"
+          >
+            VOTE CAST
+          </motion.h1>
+          <p className="font-sans text-xl font-bold">Awaiting the verdict...</p>
+          <div className="w-16 h-16 border-8 border-warning-yellow border-t-transparent rounded-full animate-spin"></div>
         </div>
-      )}
+      </GrossOutContainer>
+    );
+  }
 
-      <div className="text-center mt-4 mb-6 space-y-2">
-        <h1 className="font-display text-5xl text-fleshy-pink drop-shadow-chunky leading-tight">
-          WHO IS THE IMPOSTER?
-        </h1>
-        <p className="font-sans text-white/70 font-bold text-sm">Read the clues. Trust no one.</p>
-      </div>
+  // Animation variants for staggering the clues
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
 
-      {/* Clues List */}
-      <div className="flex-grow flex flex-col gap-4 overflow-y-auto pb-4">
-        {clues.map((suspect) => {
-          // You can't vote for yourself (unless you're feeling really guilty)
-          if (suspect.id === playerId) return null;
+  const itemVariants = {
+    hidden: { opacity: 0, x: -50 },
+    show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300 } }
+  };
 
-          const isSelected = selectedSuspect === suspect.id;
+  return (
+    <GrossOutContainer>
+      <div className="flex flex-col h-full p-6">
+        {errorMsg && (
+          <div className="bg-warning-yellow text-bruise-purple font-bold p-3 rounded-xl text-center mb-4 border-4 border-bruise-purple">
+            {errorMsg}
+          </div>
+        )}
 
-          return (
-            <button
-              key={suspect.id}
-              onClick={() => setSelectedSuspect(suspect.id)}
-              className={`w-full p-4 rounded-xl border-4 text-left transition-all ${
-                isSelected
-                  ? "bg-warning-yellow border-bruise-purple shadow-chunky-green text-bruise-purple"
-                  : "bg-dark-void border-fleshy-pink text-white hover:bg-bruise-purple"
-              }`}
-            >
-              <div className="font-sans font-bold text-xs uppercase tracking-widest opacity-70 mb-1">
-                Sense: {suspect.assigned_sense}
-              </div>
-              <div className="font-display text-3xl leading-none">
-                "{suspect.current_clue}"
-              </div>
-            </button>
-          );
-        })}
-      </div>
+        <div className="text-center mt-4 mb-6 space-y-2">
+          <h1 className="font-display text-5xl text-fleshy-pink drop-shadow-chunky leading-tight">
+            WHO IS THE IMPOSTER?
+          </h1>
+          <p className="font-sans text-white/70 font-bold text-sm">Read the clues. Trust no one.</p>
+        </div>
 
-      {/* Action Footer */}
-      <div className="mt-auto pt-6">
-        <button
-          onClick={handleVote}
-          disabled={!selectedSuspect || isSubmitting}
-          className={`w-full font-display text-4xl py-4 rounded-xl border-4 border-bruise-purple transition-all ${
-            selectedSuspect && !isSubmitting
-              ? "bg-toxic-green text-bruise-purple shadow-chunky active:translate-y-1 active:shadow-none"
-              : "bg-gray-500 text-gray-300 opacity-50 cursor-not-allowed"
-          }`}
+        {/* Clues List - Now Animated */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="flex-grow flex flex-col gap-4 overflow-y-auto pb-4"
         >
-          {isSubmitting ? "CASTING VOTE..." : "Lock Vote"}
-        </button>
+          {clues.map((suspect) => {
+            if (suspect.id === playerId) return null;
+
+            const isSelected = selectedSuspect === suspect.id;
+
+            return (
+              <motion.button
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                key={suspect.id}
+                onClick={() => setSelectedSuspect(suspect.id)}
+                className={`w-full p-4 rounded-xl border-4 text-left transition-colors ${
+                  isSelected
+                    ? "bg-warning-yellow border-bruise-purple shadow-chunky-green text-bruise-purple"
+                    : "bg-dark-void border-fleshy-pink text-white"
+                }`}
+              >
+                <div className="font-sans font-bold text-xs uppercase tracking-widest opacity-70 mb-1">
+                  Sense: {suspect.assigned_sense}
+                </div>
+                <div className="font-display text-3xl leading-none">
+                  "{suspect.current_clue}"
+                </div>
+              </motion.button>
+            );
+          })}
+        </motion.div>
+
+        {/* Action Footer */}
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-auto pt-6"
+        >
+          <button
+            onClick={handleVote}
+            disabled={!selectedSuspect || isSubmitting}
+            className={`w-full font-display text-4xl py-4 rounded-xl border-4 border-bruise-purple transition-all ${
+              selectedSuspect && !isSubmitting
+                ? "bg-toxic-green text-bruise-purple shadow-chunky active:translate-y-1 active:shadow-none"
+                : "bg-gray-500 text-gray-300 opacity-50 cursor-not-allowed"
+            }`}
+          >
+            {isSubmitting ? "CASTING VOTE..." : "Lock Vote"}
+          </button>
+        </motion.div>
       </div>
-    </div>
+    </GrossOutContainer>
   );
 }

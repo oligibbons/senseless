@@ -1,5 +1,0 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* We'll let Tailwind handle the rest, but we can drop custom animations here later if Anime.js/Framer isn't enough */

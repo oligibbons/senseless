@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  /* GROSS_OUT_POP Palette */
+  --color-bruise-purple: #12001A;
+  --color-fleshy-pink: #FF007F;
+  --color-toxic-green: #39FF14;
+  --color-warning-yellow: #FFD700;
+  --color-dark-void: #09000D;
+
+  /* Typography */
+  --font-display: var(--font-bangers), cursive;
+  --font-sans: var(--font-inter), sans-serif;
+
+  /* Chunky pop-art shadows */
+  --shadow-chunky: 4px 4px 0px 0px rgba(255, 0, 127, 1);
+  --shadow-chunky-green: 4px 4px 0px 0px rgba(57, 255, 20, 1);
+
+  /* Mobile-first constraints */
+  --breakpoint-xs: 375px;
+}
+
+/* Base resets to match our app */
+body {
+  background-color: var(--color-bruise-purple);
+  color: #ffffff;
+}

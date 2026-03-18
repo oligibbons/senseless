@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bangers, Inter } from "next/font/google";
+import { Creepster, Inter } from "next/font/google";
 import "./globals.css";
 import { GlobalAudio } from "@/src/components/GlobalAudio";
 
-// Load the chunky primary font
-const bangers = Bangers({
+// The new drippy, gross-out font
+const displayFont = Creepster({
   weight: "400",
   subsets: ["latin"],
-  variable: "--font-bangers",
+  variable: "--font-display",
 });
 
 // Load the readable secondary font
@@ -33,7 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#FFFFFF", // Updated to match the new white theme
+  themeColor: "#FFFFFF", 
 };
 
 export default function RootLayout({
@@ -44,9 +44,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${bangers.variable} ${inter.variable} font-sans bg-white text-bruise-purple antialiased min-h-screen flex justify-center`}
+        className={`${displayFont.variable} ${inter.variable} font-sans bg-white text-bruise-purple antialiased min-h-screen flex justify-center`}
       >
-        {/* The Mobile Sandbox: Forces all content into a phone-sized column */}
         <main className="w-full max-w-[430px] min-h-[100dvh] bg-white relative overflow-hidden shadow-2xl flex flex-col">
           <GlobalAudio />
           {children}

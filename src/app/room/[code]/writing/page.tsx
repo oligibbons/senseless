@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase";
 import { submitClueAction } from "@/src/app/actions/writing";
 import { SlimeBox } from "@/src/components/SlimeBox";
+import { useAudio } from "@/src/components/AudioProvider";
 
 const SENSE_UI: Record<string, { icon: string; label: string; color: string }> = {
   Sight: { icon: "👁️", label: "BLOODSHOT EYES", color: "text-fleshy-pink" },
@@ -17,6 +18,7 @@ const SENSE_UI: Record<string, { icon: string; label: string; color: string }> =
 export default function WritingPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const router = useRouter();
+  const { playSFX } = useAudio();
 
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [target, setTarget] = useState<string>("");
@@ -25,6 +27,7 @@ export default function WritingPage({ params }: { params: Promise<{ code: string
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [hasRevealed, setHasRevealed] = useState(false);
 
   useEffect(() => {
     const localId = localStorage.getItem("senseless_player_id");
@@ -88,8 +91,17 @@ export default function WritingPage({ params }: { params: Promise<{ code: string
     };
   }, [code, router]);
 
+  // Trigger reveal sound once data is loaded
+  useEffect(() => {
+    if (target && sense && !hasRevealed && !isSubmitted) {
+      playSFX("write_reveal");
+      setHasRevealed(true);
+    }
+  }, [target, sense, hasRevealed, isSubmitted, playSFX]);
+
   const handleSubmit = async () => {
     if (!playerId || clue.trim().length === 0) return;
+    playSFX("ui_splat"); // Heavy thud when they lock it in
     setIsSubmitting(true);
     setErrorMsg("");
 
@@ -128,7 +140,6 @@ export default function WritingPage({ params }: { params: Promise<{ code: string
         </div>
       )}
 
-      {/* Target Reveal */}
       <div className="text-center mt-2 mb-2 flex flex-col items-center">
         <p className="font-sans text-bruise-purple font-black uppercase tracking-widest text-sm mb-[-10px] z-10">Your Target Is:</p>
         <SlimeBox color="yellow" className="min-h-[120px]">
@@ -138,7 +149,6 @@ export default function WritingPage({ params }: { params: Promise<{ code: string
         </SlimeBox>
       </div>
 
-      {/* Sense Assignment */}
       <div className="text-center mb-6 flex flex-col items-center">
         <p className="font-sans text-bruise-purple/70 font-black uppercase tracking-widest text-xs mb-2">Describe it using only your:</p>
         <div className="text-6xl mb-1">{activeSense.icon}</div>
@@ -147,7 +157,6 @@ export default function WritingPage({ params }: { params: Promise<{ code: string
         </h2>
       </div>
 
-      {/* Input Area */}
       <div className="mt-auto flex flex-col gap-4">
         <div className="relative">
           <textarea

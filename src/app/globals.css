@@ -9,7 +9,7 @@
   --color-dark-void: #09000D;
 
   /* Typography */
-  --font-display: var(--font-bangers), cursive;
+  --font-display: var(--font-display), cursive;
   --font-sans: var(--font-inter), sans-serif;
 
   /* Chunky pop-art shadows */
@@ -20,8 +20,16 @@
   --breakpoint-xs: 375px;
 }
 
-/* Base resets to match our app */
+@layer utilities {
+  /* This gives our text a thick comic-book outline for perfect contrast */
+  .text-outline {
+    -webkit-text-stroke: 2px var(--color-bruise-purple);
+    paint-order: stroke fill;
+  }
+}
+
+/* Force the bright white theme */
 body {
-  background-color: var(--color-bruise-purple);
-  color: #ffffff;
+  background-color: #ffffff;
+  color: var(--color-bruise-purple);
 }

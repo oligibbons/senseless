@@ -9,10 +9,12 @@ import levenshtein from "fast-levenshtein";
 import { motion } from "framer-motion";
 import { GrossOutContainer, ScreenShake } from "@/src/components/GrossOutContainer";
 import { SlimeBox } from "@/src/components/SlimeBox";
+import { useAudio } from "@/src/components/AudioProvider";
 
 export default function ResolutionPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const router = useRouter();
+  const { playSFX } = useAudio();
 
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -23,6 +25,20 @@ export default function ResolutionPage({ params }: { params: Promise<{ code: str
   const [stealGuess, setStealGuess] = useState("");
   const [stealResult, setStealResult] = useState<"pending" | "success" | "failed">("pending");
   const [isFinalizing, setIsFinalizing] = useState(false);
+
+  // Audio trackers to prevent overlapping sounds on re-renders
+  const [hasPlayedDrumroll, setHasPlayedDrumroll] = useState(false);
+  const [hasPlayedReveal, setHasPlayedReveal] = useState(false);
+  const [hasPlayedStealAlarm, setHasPlayedStealAlarm] = useState(false);
+  const [hasPlayedStealResult, setHasPlayedStealResult] = useState(false);
+
+  useEffect(() => {
+    // Play drumroll immediately when the page mounts (Tallying Votes)
+    if (!hasPlayedDrumroll) {
+      playSFX("res_drumroll");
+      setHasPlayedDrumroll(true);
+    }
+  }, [hasPlayedDrumroll, playSFX]);
 
   useEffect(() => {
     const localId = localStorage.getItem("senseless_player_id");
@@ -81,8 +97,38 @@ export default function ResolutionPage({ params }: { params: Promise<{ code: str
     };
   }, [code, router]);
 
+  // Audio: The Reveal
+  useEffect(() => {
+    if (isCaught !== null && !hasPlayedReveal) {
+      if (isCaught) playSFX("res_caught");
+      else playSFX("res_escaped");
+      setHasPlayedReveal(true);
+    }
+  }, [isCaught, hasPlayedReveal, playSFX]);
+
+  // Audio: The Steal Alarm (Delayed slightly to match the Framer Motion UI)
+  useEffect(() => {
+    if (isCaught && stealResult === "pending" && !hasPlayedStealAlarm) {
+      const t = setTimeout(() => {
+        playSFX("steal_alarm");
+        setHasPlayedStealAlarm(true);
+      }, 1000);
+      return () => clearTimeout(t);
+    }
+  }, [isCaught, stealResult, hasPlayedStealAlarm, playSFX]);
+
+  // Audio: The Steal Result
+  useEffect(() => {
+    if (stealResult !== "pending" && !hasPlayedStealResult) {
+      if (stealResult === "success") playSFX("steal_success");
+      if (stealResult === "failed") playSFX("steal_fail");
+      setHasPlayedStealResult(true);
+    }
+  }, [stealResult, hasPlayedStealResult, playSFX]);
+
   const handleStealAttempt = async () => {
     if (!imposter || !prompt || isFinalizing) return;
+    playSFX("ui_splat"); // Heavy thud when submitting steal
     setIsFinalizing(true);
 
     let success = false;
@@ -103,6 +149,7 @@ export default function ResolutionPage({ params }: { params: Promise<{ code: str
 
   const handleHostContinue = async () => {
     if (!imposter || isFinalizing) return;
+    playSFX("ui_splat");
     setIsFinalizing(true);
     await finalizeRoundAction(code, imposter.id, false, false);
   };

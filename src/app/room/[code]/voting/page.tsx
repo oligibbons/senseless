@@ -8,6 +8,7 @@ import { Player } from "@/src/types/database";
 import { motion } from "framer-motion";
 import { GrossOutContainer } from "@/src/components/GrossOutContainer";
 import { SlimeBox } from "@/src/components/SlimeBox";
+import { useAudio } from "@/src/components/AudioProvider";
 
 // Fisher-Yates shuffle to randomize clues
 function shuffleArray<T>(array: T[]): T[] {
@@ -22,6 +23,7 @@ function shuffleArray<T>(array: T[]): T[] {
 export default function VotingPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const router = useRouter();
+  const { playSFX } = useAudio();
 
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [clues, setClues] = useState<Player[]>([]);
@@ -77,6 +79,7 @@ export default function VotingPage({ params }: { params: Promise<{ code: string 
 
   const handleVote = async () => {
     if (!playerId || !selectedSuspect) return;
+    playSFX("vote_cast"); // The heavy, fleshy vault door slamming shut
     setIsSubmitting(true);
     setErrorMsg("");
 

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { ReactNode } from "react";
 
-type SlimeColor = "blue" | "orange" | "pink" | "purple" | "yellow";
+// Added "green" to the allowed colors!
+type SlimeColor = "blue" | "green" | "orange" | "pink" | "purple" | "yellow";
 
 interface SlimeBoxProps {
   color: SlimeColor;
@@ -13,7 +14,8 @@ interface SlimeBoxProps {
 
 const colorMap: Record<SlimeColor, string> = {
   blue: "/senseless_box_blue.png",
-  orange: "/senseless_box_orange.jpg",
+  green: "/senseless_box_green.png",
+  orange: "/senseless_box_orange.png", // Fixed extension
   pink: "/senseless_box_pink.png",
   purple: "/senseless_box_purple.png",
   yellow: "/senseless_box_yellow.png",
@@ -22,9 +24,6 @@ const colorMap: Record<SlimeColor, string> = {
 export function SlimeBox({ color, children, className = "", onClick, disabled = false }: SlimeBoxProps) {
   const isInteractive = !!onClick && !disabled;
   const Component = onClick ? "button" : "div";
-  
-  // JPEGs don't have transparency. We use mix-blend-multiply as a hack to drop white backgrounds.
-  const isJpeg = color === "orange"; 
 
   return (
     <Component
@@ -41,7 +40,7 @@ export function SlimeBox({ color, children, className = "", onClick, disabled = 
           alt={`${color} slime box`}
           fill
           sizes="(max-width: 430px) 100vw, 430px"
-          className={`object-contain ${isJpeg ? "mix-blend-multiply" : "drop-shadow-chunky"}`}
+          className="object-contain drop-shadow-chunky" // Removed mix-blend hack, added chunky shadow!
           priority
         />
       </div>
